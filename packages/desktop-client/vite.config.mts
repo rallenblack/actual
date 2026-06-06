@@ -198,7 +198,9 @@ const lootCoreBackend = (): Plugin => ({
         'development',
         '--watch',
       ],
-      { cwd: lootCoreRoot, stdio: 'inherit' },
+      // shell: true is required on Windows, where `yarn` resolves to a
+      // `.CMD` shim that Node's spawn cannot launch without a shell.
+      { cwd: lootCoreRoot, stdio: 'inherit', shell: process.platform === 'win32' },
     );
     child.on('error', err => {
       server.config.logger.error(
