@@ -56,14 +56,26 @@ async function main() {
     throw new Error('No budgets found on the server. Create one in the app first.');
   }
 
+  // After a first run the budget exists both locally and remotely, so
+  // getBudgets() returns it twice with the same groupId — collapse duplicates.
+  const uniqueBudgets = [];
+  const seenSync = new Set();
+  for (const b of budgets) {
+    const key = b.groupId || b.cloudFileId || b.id;
+    if (!seenSync.has(key)) {
+      seenSync.add(key);
+      uniqueBudgets.push(b);
+    }
+  }
+
   let target;
-  if (SYNC_ID) target = budgets.find(b => b.groupId === SYNC_ID);
-  else if (BUDGET_NAME) target = budgets.find(b => b.name === BUDGET_NAME);
-  else if (budgets.length === 1) target = budgets[0];
+  if (SYNC_ID) target = uniqueBudgets.find(b => b.groupId === SYNC_ID);
+  else if (BUDGET_NAME) target = uniqueBudgets.find(b => b.name === BUDGET_NAME);
+  else if (uniqueBudgets.length === 1) target = uniqueBudgets[0];
 
   if (!target) {
     console.error('Could not pick a budget. Set ACTUAL_BUDGET_NAME or ACTUAL_SYNC_ID. Available:');
-    budgets.forEach(b => console.error(`  - "${b.name}"  syncId=${b.groupId}`));
+    uniqueBudgets.forEach(b => console.error(`  - "${b.name}"  syncId=${b.groupId}`));
     process.exit(1);
   }
 
@@ -109,44 +121,107 @@ async function main() {
     }
   }
 
-  // --- Rules (idempotent: skip if a rule already sets this category) ---
+  // --- Rules (upsert: refresh our managed rule for each category so edits to
+  // taxonomy.cjs take effect on re-run). A rule is "ours" if its single action
+  // sets exactly this category; your hand-made rules are left untouched. ---
+  let updatedRules = 0;
   const existingRules = await api.getRules();
-  const categoriesWithRule = new Set();
+  const ruleForCategory = new Map();
   for (const r of existingRules) {
-    for (const a of r.actions || []) {
-      if (a.op === 'set' && a.field === 'category') categoriesWithRule.add(a.value);
+    const sets = (r.actions || []).filter(a => a.op === 'set' && a.field === 'category');
+    if (r.actions && r.actions.length === 1 && sets.length === 1) {
+      if (!ruleForCategory.has(sets[0].value)) ruleForCategory.set(sets[0].value, r);
     }
   }
 
   for (const grp of taxonomy) {
     for (const cat of grp.categories) {
       if (!cat.match || cat.match.length === 0) continue;
-      if (categoriesWithRule.has(cat._id)) {
-        skippedRules++;
-        continue;
+      const conditions = cat.match.map(m => ({
+        field: 'imported_payee',
+        op: 'contains',
+        value: m,
+      }));
+      const actions = [{ field: 'category', op: 'set', value: cat._id }];
+      const existing = ruleForCategory.get(cat._id);
+      if (existing) {
+        const before = JSON.stringify(existing.conditions);
+        if (before === JSON.stringify(conditions)) {
+          skippedRules++;
+        } else {
+          await api.updateRule({ ...existing, stage: existing.stage ?? 'pre', conditionsOp: 'or', conditions, actions });
+          updatedRules++;
+          console.log(`  ~ rule updated -> ${cat.name} (${cat.match.length} patterns)`);
+        }
+      } else {
+        await api.createRule({ stage: 'pre', conditionsOp: 'or', conditions, actions });
+        createdRules++;
+        console.log(`  ~ rule created -> ${cat.name} (${cat.match.length} patterns)`);
       }
-      await api.createRule({
-        stage: 'pre',
-        conditionsOp: 'or',
-        conditions: cat.match.map(m => ({
-          field: 'imported_payee',
-          op: 'contains',
-          value: m,
-        })),
-        actions: [{ field: 'category', op: 'set', value: cat._id }],
-      });
-      createdRules++;
-      console.log(`  ~ rule -> ${cat.name} (${cat.match.length} patterns)`);
+    }
+  }
+
+  console.log(
+    `\nCategories: groups +${createdGroups}, categories +${createdCats}, ` +
+      `rules +${createdRules} created, ${updatedRules} updated, ${skippedRules} unchanged.`,
+  );
+
+  // --- Retroactively categorize already-imported transactions ---
+  // Rules auto-run on FUTURE imports; this pass handles transactions that were
+  // imported before the rules existed. Longest matching pattern wins (so
+  // "COSTCO GAS" -> Fuel beats "COSTCO" -> Groceries). Only fills in
+  // transactions that have NO category yet; never overrides your choices.
+  if (process.env.APPLY_EXISTING !== '0') {
+    const matchers = [];
+    for (const grp of taxonomy) {
+      for (const cat of grp.categories) {
+        for (const m of cat.match || []) {
+          matchers.push({ pat: m.toLowerCase(), len: m.length, catId: cat._id, catName: cat.name });
+        }
+      }
+    }
+    matchers.sort((a, b) => b.len - a.len);
+
+    const payees = await api.getPayees();
+    const payeeName = new Map(payees.map(p => [p.id, p.name]));
+    const accounts = await api.getAccounts();
+    const today = new Date().toISOString().slice(0, 10);
+
+    let scanned = 0;
+    let matched = 0;
+    const unmatched = new Map(); // text -> count
+
+    for (const acct of accounts) {
+      const txns = await api.getTransactions(acct.id, '2000-01-01', today);
+      for (const t of txns) {
+        if (t.category) continue;          // already categorized — leave it
+        if (t.transfer_id) continue;       // transfers aren't spending
+        if (t.is_parent) continue;         // split parent; children handled individually
+        const raw = t.imported_payee || payeeName.get(t.payee) || '';
+        if (!raw) continue;
+        scanned++;
+        const text = raw.toLowerCase();
+        const hit = matchers.find(m => text.includes(m.pat));
+        if (hit) {
+          await api.updateTransaction(t.id, { category: hit.catId });
+          matched++;
+        } else {
+          unmatched.set(raw, (unmatched.get(raw) || 0) + 1);
+        }
+      }
+    }
+
+    console.log(`\nRetroactive: categorized ${matched} of ${scanned} uncategorized transactions.`);
+    if (unmatched.size) {
+      const top = [...unmatched.entries()].sort((a, b) => b[1] - a[1]).slice(0, 40);
+      console.log(`\nTop ${top.length} UNMATCHED payee texts (tune taxonomy.cjs to cover these):`);
+      for (const [text, n] of top) console.log(`  ${String(n).padStart(3)}x  ${text}`);
     }
   }
 
   await api.sync();
   await api.shutdown();
-
-  console.log(
-    `\nDone. Groups +${createdGroups}, Categories +${createdCats}, ` +
-      `Rules +${createdRules} (skipped ${skippedRules} already present).`,
-  );
+  console.log('\nDone. Synced to server.');
 }
 
 main().catch(async err => {
