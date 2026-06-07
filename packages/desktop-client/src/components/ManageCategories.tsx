@@ -290,6 +290,7 @@ export function ManageCategories() {
           <View
             key={group.id}
             style={{
+              flexShrink: 0,
               border: '1px solid ' + theme.tableBorder,
               borderRadius: 6,
               marginBottom: 8,
@@ -297,10 +298,12 @@ export function ManageCategories() {
           >
             <View
               style={{
+                flexShrink: 0,
                 flexDirection: 'row',
                 alignItems: 'center',
                 gap: 6,
-                padding: 8,
+                minHeight: 40,
+                padding: '10px 8px',
                 backgroundColor: theme.tableRowHeaderBackground,
                 borderTopLeftRadius: 6,
                 borderTopRightRadius: 6,
@@ -348,10 +351,12 @@ export function ManageCategories() {
               <View
                 key={cat.id}
                 style={{
+                  flexShrink: 0,
                   flexDirection: 'row',
                   alignItems: 'center',
                   gap: 6,
-                  padding: '6px 8px 6px 28px',
+                  minHeight: 36,
+                  padding: '10px 8px 10px 28px',
                   borderTop: '1px solid ' + theme.tableBorder,
                 }}
               >
