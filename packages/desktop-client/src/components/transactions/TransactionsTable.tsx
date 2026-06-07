@@ -32,6 +32,7 @@ import {
   SvgArrowDown,
   SvgArrowUp,
   SvgCheveronDown,
+  SvgViewShow,
 } from '@actual-app/components/icons/v1';
 import {
   SvgArrowsSynchronize,
@@ -336,6 +337,9 @@ const TransactionHeader = memo(
             }}
           />
         )}
+        {showCleared && (
+          <HeaderCell value="👁" width={26} alignItems="center" id="reviewed" />
+        )}
       </Row>
     );
   },
@@ -427,6 +431,54 @@ function StatusCell({
             marginTop: status === 'due' ? -1 : 0,
           },
         })}
+      </CellButton>
+    </Cell>
+  );
+}
+
+type ReviewedCellProps = {
+  reviewed: boolean;
+  focused: boolean;
+  isChild: boolean;
+  isPreview: boolean;
+  onUpdate: (name: 'reviewed', value: boolean) => void;
+};
+function ReviewedCell({
+  reviewed,
+  focused,
+  isChild,
+  isPreview,
+  onUpdate,
+}: ReviewedCellProps) {
+  const disabled = isPreview || isChild;
+  return (
+    <Cell
+      name="reviewed"
+      width={26}
+      alignItems="center"
+      focused={focused}
+      style={{ padding: 1 }}
+      plain
+    >
+      <CellButton
+        style={{
+          padding: 3,
+          backgroundColor: 'transparent',
+          border: '1px solid transparent',
+          borderRadius: 50,
+          cursor: disabled ? 'default' : 'pointer',
+          ...(isChild && { visibility: 'hidden' }),
+        }}
+        disabled={disabled}
+        onSelect={() => onUpdate('reviewed', !reviewed)}
+      >
+        <SvgViewShow
+          style={{
+            width: 13,
+            height: 13,
+            color: reviewed ? theme.noticeTextLight : theme.pageTextSubdued,
+          }}
+        />
       </CellButton>
     </Cell>
   );
@@ -1159,6 +1211,7 @@ const Transaction = memo(function Transaction({
     category: categoryId,
     cleared,
     reconciled,
+    reviewed,
     forceUpcoming,
     is_parent: isParent,
     _unmatched = false,
@@ -1893,6 +1946,16 @@ const Transaction = memo(function Transaction({
             }
             isChild={isChild}
             onEdit={onEdit}
+            onUpdate={onUpdate}
+          />
+        )}
+
+        {showCleared && (
+          <ReviewedCell
+            reviewed={!!reviewed}
+            focused={focusedField === 'reviewed'}
+            isChild={!!isChild}
+            isPreview={!!isPreview}
             onUpdate={onUpdate}
           />
         )}
