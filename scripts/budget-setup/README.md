@@ -15,9 +15,20 @@ self-hosted sync server.
 
 1. Make sure the **sync server is running** (`yarn start:server`, port 5006) and
    you've created your budget in the app.
-2. Personalize [`taxonomy.cjs`](./taxonomy.cjs) (rename categories, fix the
+2. **Build the api bundle** (one-time, and again only if loot-core changes):
+
+   ```bash
+   node scripts/budget-setup/build-api-bundle.cjs
+   ```
+
+   This produces a self-contained `_apibundle.cjs` (+ a copied `migrations/`
+   folder) from *this fork's* `@actual-app/api`, so the script runs the exact
+   same loot-core and migrations as the app. We don't use the published npm
+   `@actual-app/api` because its migration version can differ from your fork's
+   and the server will reject an out-of-sync budget.
+3. Personalize [`taxonomy.cjs`](./taxonomy.cjs) (rename categories, fix the
    merchant lists for your actual banks).
-3. From the **repo root**, with your sync-server password:
+4. From the **repo root**, with your sync-server password:
 
    ```powershell
    # PowerShell

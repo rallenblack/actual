@@ -27,12 +27,17 @@ const path = require('path');
 const fs = require('fs');
 const { taxonomy } = require('./taxonomy.cjs');
 
-let api;
-try {
-  api = require('@actual-app/api');
-} catch {
-  api = require(path.join(__dirname, '..', '..', 'packages', 'api', 'dist', 'index.js'));
+// Use the self-contained bundle of THIS fork's api (built by
+// build-api-bundle.cjs) so we run the same loot-core + migrations as the app.
+const bundlePath = path.join(__dirname, '_apibundle.cjs');
+if (!fs.existsSync(bundlePath)) {
+  console.error(
+    'Missing _apibundle.cjs. Build it first from the repo root:\n' +
+      '  node scripts/budget-setup/build-api-bundle.cjs',
+  );
+  process.exit(1);
 }
+const api = require(bundlePath);
 
 const SERVER_URL = process.env.ACTUAL_SERVER_URL || 'http://localhost:5006';
 const PASSWORD = process.env.ACTUAL_PASSWORD;
@@ -213,7 +218,7 @@ async function main() {
 
     console.log(`\nRetroactive: categorized ${matched} of ${scanned} uncategorized transactions.`);
     if (unmatched.size) {
-      const top = [...unmatched.entries()].sort((a, b) => b[1] - a[1]).slice(0, 40);
+      const top = [...unmatched.entries()].sort((a, b) => b[1] - a[1]).slice(0, 60);
       console.log(`\nTop ${top.length} UNMATCHED payee texts (tune taxonomy.cjs to cover these):`);
       for (const [text, n] of top) console.log(`  ${String(n).padStart(3)}x  ${text}`);
     }
