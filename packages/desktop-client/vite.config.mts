@@ -200,7 +200,11 @@ const lootCoreBackend = (): Plugin => ({
       ],
       // shell: true is required on Windows, where `yarn` resolves to a
       // `.CMD` shim that Node's spawn cannot launch without a shell.
-      { cwd: lootCoreRoot, stdio: 'inherit', shell: process.platform === 'win32' },
+      {
+        cwd: lootCoreRoot,
+        stdio: 'inherit',
+        shell: process.platform === 'win32',
+      },
     );
     child.on('error', err => {
       server.config.logger.error(
@@ -359,7 +363,10 @@ export default defineConfig(async ({ mode, command }) => {
       mode === 'desktop'
         ? undefined
         : VitePWA({
-            registerType: 'prompt',
+            // autoUpdate: a new build's service worker activates on the next
+            // load instead of waiting silently, so changes propagate without
+            // manually clearing the cache.
+            registerType: 'autoUpdate',
             // TODO:  The plugin worker build is currently disabled due to issues with offline support. Fix this
             // strategies: 'injectManifest',
             // srcDir: 'service-worker',

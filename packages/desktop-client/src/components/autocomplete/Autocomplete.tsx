@@ -138,10 +138,15 @@ function fireUpdate<T extends AutocompleteItem>(
   onUpdate?.(selected, value);
 }
 
-function defaultRenderInput(props: ComponentProps<typeof Input>) {
-  // Disable password-manager autofill on autocomplete fields (e.g. category,
-  // payee): data-1p-ignore (1Password), data-lpignore (LastPass),
-  // data-form-type="other" (Bitwarden/Dashlane), autoComplete off (generic).
+// Aggressive password managers (e.g. LastPass) ignore the data-* opt-outs and
+// still force-fill autocomplete fields. The reliable defense is to render the
+// field read-only and flip it editable on focus: managers run their autofill
+// pass on page-load and on-focus, and skip read-only fields. read-only only
+// blocks *user typing* for that first frame (programmatic value updates from
+// the autocomplete still work), so editing is unaffected. We keep the data-*
+// opt-outs too for the managers that do honor them.
+function AutofillSafeInput(props: ComponentProps<typeof Input>) {
+  const [readOnly, setReadOnly] = useState(true);
   return (
     <Input
       data-1p-ignore
@@ -149,8 +154,17 @@ function defaultRenderInput(props: ComponentProps<typeof Input>) {
       data-form-type="other"
       autoComplete="off"
       {...props}
+      readOnly={readOnly || props.readOnly}
+      onFocus={e => {
+        setReadOnly(false);
+        props.onFocus?.(e);
+      }}
     />
   );
+}
+
+function defaultRenderInput(props: ComponentProps<typeof Input>) {
+  return <AutofillSafeInput {...props} />;
 }
 
 function defaultRenderItems<T extends AutocompleteItem>(
