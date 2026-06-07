@@ -32,6 +32,7 @@ import {
   SvgArrowDown,
   SvgArrowUp,
   SvgCheveronDown,
+  SvgViewHide,
   SvgViewShow,
 } from '@actual-app/components/icons/v1';
 import {
@@ -451,6 +452,9 @@ function ReviewedCell({
   onUpdate,
 }: ReviewedCellProps) {
   const disabled = isPreview || isChild;
+  // High contrast: a bold green open eye on a tinted chip when reviewed, vs a
+  // faint slashed eye (different shape) when not — distinguishable at a glance.
+  const Icon = reviewed ? SvgViewShow : SvgViewHide;
   return (
     <Cell
       name="reviewed"
@@ -463,7 +467,7 @@ function ReviewedCell({
       <CellButton
         style={{
           padding: 3,
-          backgroundColor: 'transparent',
+          backgroundColor: reviewed ? theme.noticeBackground : 'transparent',
           border: '1px solid transparent',
           borderRadius: 50,
           cursor: disabled ? 'default' : 'pointer',
@@ -472,11 +476,11 @@ function ReviewedCell({
         disabled={disabled}
         onSelect={() => onUpdate('reviewed', !reviewed)}
       >
-        <SvgViewShow
+        <Icon
           style={{
-            width: 13,
-            height: 13,
-            color: reviewed ? theme.noticeTextLight : theme.pageTextSubdued,
+            width: 14,
+            height: 14,
+            color: reviewed ? theme.noticeText : theme.tableBorderSelected,
           }}
         />
       </CellButton>
