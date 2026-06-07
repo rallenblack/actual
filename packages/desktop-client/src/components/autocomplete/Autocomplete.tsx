@@ -139,8 +139,18 @@ function fireUpdate<T extends AutocompleteItem>(
 }
 
 function defaultRenderInput(props: ComponentProps<typeof Input>) {
-  // data-1p-ignore disables 1Password autofill behaviour
-  return <Input data-1p-ignore {...props} />;
+  // Disable password-manager autofill on autocomplete fields (e.g. category,
+  // payee): data-1p-ignore (1Password), data-lpignore (LastPass),
+  // data-form-type="other" (Bitwarden/Dashlane), autoComplete off (generic).
+  return (
+    <Input
+      data-1p-ignore
+      data-lpignore="true"
+      data-form-type="other"
+      autoComplete="off"
+      {...props}
+    />
+  );
 }
 
 function defaultRenderItems<T extends AutocompleteItem>(
@@ -802,6 +812,10 @@ function MultiAutocomplete<T extends AutocompleteItem>({
             );
           })}
           <Input
+            data-1p-ignore
+            data-lpignore="true"
+            data-form-type="other"
+            autoComplete="off"
             {...inputProps}
             ref={inputRef}
             onKeyDown={e => onKeyDown(e, inputProps.onKeyDown)}
