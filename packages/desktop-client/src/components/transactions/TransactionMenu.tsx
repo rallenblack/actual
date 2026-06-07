@@ -11,6 +11,7 @@ import {
 import { isPreviewId } from '@actual-app/core/shared/transactions';
 import type { TransactionEntity } from '@actual-app/core/types/models';
 
+import { usePayeesById } from '#hooks/usePayees';
 import { useSchedules } from '#hooks/useSchedules';
 import { useSelectedItems } from '#hooks/useSelected';
 import { pushModal } from '#modals/modalsSlice';
@@ -51,6 +52,24 @@ export function TransactionMenu({
   const { t } = useTranslation();
   const dispatch = useDispatch();
   const selectedItems = useSelectedItems();
+  const { data: payeesById } = usePayeesById();
+
+  // Searchable text for the right-clicked transaction (not the whole selection).
+  const payeeName = transaction.payee
+    ? payeesById?.[transaction.payee]?.name
+    : undefined;
+  const notes = transaction.notes;
+
+  function searchOnGoogle(text: string) {
+    window.open(
+      `https://www.google.com/search?q=${encodeURIComponent(text)}`,
+      '_blank',
+      'noopener,noreferrer',
+    );
+  }
+
+  const truncate = (text: string) =>
+    text.length > 30 ? `${text.slice(0, 30)}…` : text;
 
   const selectedIds = useMemo(() => {
     const ids =
@@ -186,6 +205,12 @@ export function TransactionMenu({
           case 'create-rule':
             onCreateRule(selectedIds);
             break;
+          case 'search-payee-google':
+            if (payeeName) searchOnGoogle(payeeName);
+            break;
+          case 'search-notes-google':
+            if (notes) searchOnGoogle(notes);
+            break;
           default:
             throw new Error(`Unrecognized menu option: ${name}`);
         }
@@ -242,6 +267,30 @@ export function TransactionMenu({
                   ]
                 : []),
             ]),
+        ...(payeeName || notes
+          ? [
+              ...(payeeName
+                ? [
+                    {
+                      name: 'search-payee-google',
+                      text: t('Search "{{text}}" on Google', {
+                        text: truncate(payeeName),
+                      }),
+                    },
+                  ]
+                : []),
+              ...(notes
+                ? [
+                    {
+                      name: 'search-notes-google',
+                      text: t('Search "{{text}}" on Google', {
+                        text: truncate(notes),
+                      }),
+                    },
+                  ]
+                : []),
+            ]
+          : []),
       ]}
     />
   );
