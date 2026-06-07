@@ -28,6 +28,7 @@ import { CommandBar } from './CommandBar';
 import { EnableBankingCallback } from './EnableBankingCallback';
 import { FeatureErrorFallback } from './FeatureErrorFallback';
 import { GlobalKeys } from './GlobalKeys';
+import { ManageCategoriesPage } from './ManageCategoriesPage';
 import { MobileBankSyncAccountEditPage } from './mobile/banksync/MobileBankSyncAccountEditPage';
 import { MobileNavTabs } from './mobile/MobileNavTabs';
 import { TransactionEdit } from './mobile/transactions/TransactionEdit';
@@ -326,6 +327,10 @@ export function FinancesApp() {
                     }
                   />
                   <Route path="/tags" element={<ManageTagsPage />} />
+                  <Route
+                    path="/categories"
+                    element={<ManageCategoriesPage />}
+                  />
                   <Route path="/settings" element={<Settings />} />
 
                   <Route

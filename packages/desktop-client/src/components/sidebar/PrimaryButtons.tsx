@@ -7,6 +7,7 @@ import {
   SvgCheveronRight,
   SvgCog,
   SvgCreditCard,
+  SvgList,
   SvgReports,
   SvgStoreFront,
   SvgTag,
@@ -35,6 +36,7 @@ export function PrimaryButtons() {
   const isActive = [
     '/payees',
     '/rules',
+    '/categories',
     '/bank-sync',
     '/settings',
     '/tools',
@@ -70,6 +72,12 @@ export function PrimaryButtons() {
             title={t('Rules')}
             Icon={SvgTuning}
             to="/rules"
+            indent={15}
+          />
+          <SecondaryItem
+            title={t('Categories')}
+            Icon={SvgList}
+            to="/categories"
             indent={15}
           />
           {isUsingServer && (
