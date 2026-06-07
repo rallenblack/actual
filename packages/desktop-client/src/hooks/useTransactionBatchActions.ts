@@ -108,6 +108,12 @@ export function useTransactionBatchActions() {
         value = !!transactionsToChange.find(t => !t.cleared);
       }
 
+      // Reviewed toggles the same way: mark reviewed if any are unreviewed,
+      // otherwise mark them all unreviewed.
+      if (name === 'reviewed') {
+        value = !!transactionsToChange.find(t => !t.reviewed);
+      }
+
       const idSet = new Set(ids);
 
       transactionsToChange.forEach(trans => {
@@ -256,6 +262,10 @@ export function useTransactionBatchActions() {
         // Cleared just toggles it on/off and it depends on the data
         // loaded. Need to clean this up in the future.
         void onChange('cleared', null);
+      } else if (name === 'reviewed') {
+        // Reviewed (a manual "we've looked at this" flag, independent of
+        // cleared) toggles on/off based on the current selection.
+        void onChange('reviewed', null);
       } else if (name === 'category') {
         pushCategoryAutocompleteModal();
       } else if (name === 'payee') {

@@ -82,6 +82,7 @@ const FIELD_INFO = {
   account: { type: 'id' },
   cleared: { type: 'boolean' },
   reconciled: { type: 'boolean' },
+  reviewed: { type: 'boolean' },
   saved: { type: 'saved' },
   transfer: { type: 'boolean' },
   parent: { type: 'boolean' },

@@ -69,6 +69,8 @@ export function mapField(field, opts?) {
       return t('cleared');
     case 'reconciled':
       return t('reconciled');
+    case 'reviewed':
+      return t('reviewed');
     case 'transfer':
       return t('transfer');
     default:

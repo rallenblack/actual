@@ -1,0 +1,5 @@
+BEGIN TRANSACTION;
+
+ALTER TABLE transactions ADD COLUMN reviewed integer DEFAULT 0;
+
+COMMIT;

@@ -74,6 +74,7 @@ const filterFields = [
   'amount',
   'cleared',
   'reconciled',
+  'reviewed',
   'transfer',
 ].map(field => [field, mapField(field)]);
 
