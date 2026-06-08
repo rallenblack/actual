@@ -354,6 +354,21 @@ const updateSW = IS_DEV
   : registerSW({
       immediate: true,
       onNeedRefresh: markUpdateReadyForDownload,
+      onRegisteredSW(_swScriptUrl, registration) {
+        if (!registration) return;
+        // iOS installed PWAs (and some browsers) don't reliably check for a new
+        // service worker on launch, so a deployed update is never noticed and
+        // the app stays on stale code. Explicitly check whenever the app
+        // becomes visible/focused (i.e. when it's (re)opened) so updates land.
+        // (Avoid a recurring interval so autoUpdate never reloads mid-session.)
+        const checkForUpdate = () => {
+          if (document.visibilityState !== 'hidden') {
+            registration.update().catch(() => undefined);
+          }
+        };
+        document.addEventListener('visibilitychange', checkForUpdate);
+        window.addEventListener('focus', checkForUpdate);
+      },
     });
 
 global.Actual = {
