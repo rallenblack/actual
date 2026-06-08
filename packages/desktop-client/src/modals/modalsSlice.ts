@@ -354,6 +354,7 @@ export type Modal =
         onClose?: () => void;
         onToggleRunningBalance?: () => void;
         onToggleReconciled?: () => void;
+        onToggleReviewed?: () => void;
       };
     }
   | {

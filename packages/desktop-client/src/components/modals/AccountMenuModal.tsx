@@ -44,6 +44,7 @@ export function AccountMenuModal({
   onClose,
   onToggleRunningBalance,
   onToggleReconciled,
+  onToggleReviewed,
 }: AccountMenuModalProps) {
   const { t } = useTranslation();
   const account = useAccount(accountId);
@@ -123,6 +124,7 @@ export function AccountMenuModal({
                 onReopen={onReopenAccount}
                 onToggleRunningBalance={onToggleRunningBalance}
                 onToggleReconciled={onToggleReconciled}
+                onToggleReviewed={onToggleReviewed}
               />
             }
             title={
@@ -202,6 +204,7 @@ type AdditionalAccountMenuProps = {
   onReopen?: (accountId: string) => void;
   onToggleRunningBalance?: () => void;
   onToggleReconciled?: () => void;
+  onToggleReviewed?: () => void;
 };
 
 function AdditionalAccountMenu({
@@ -210,6 +213,7 @@ function AdditionalAccountMenu({
   onReopen,
   onToggleRunningBalance,
   onToggleReconciled,
+  onToggleReviewed,
 }: AdditionalAccountMenuProps) {
   const { t } = useTranslation();
   const triggerRef = useRef(null);
@@ -225,6 +229,7 @@ function AdditionalAccountMenu({
   });
   const [showBalances] = useSyncedPref(`show-balances-${account.id}`);
   const [hideReconciled] = useSyncedPref(`hide-reconciled-${account.id}`);
+  const [hideReviewed] = useSyncedPref(`hide-reviewed-${account.id}`);
 
   return (
     <View>
@@ -264,6 +269,13 @@ function AdditionalAccountMenu({
                     ? t('Hide reconciled transactions')
                     : t('Show reconciled transactions'),
               },
+              {
+                name: 'toggle-reviewed',
+                text:
+                  hideReviewed !== 'true'
+                    ? t('Show only unreviewed transactions')
+                    : t('Show all transactions'),
+              },
               account.closed
                 ? {
                     name: 'reopen',
@@ -292,6 +304,9 @@ function AdditionalAccountMenu({
                   break;
                 case 'toggle-reconciled':
                   onToggleReconciled?.();
+                  break;
+                case 'toggle-reviewed':
+                  onToggleReviewed?.();
                   break;
                 default:
                   throw new Error(`Unrecognized menu option: ${String(name)}`);

@@ -145,6 +145,9 @@ function AccountHeader({ account }: { readonly account: AccountEntity }) {
   const [hideReconciled, setHideReconciled] = useSyncedPref(
     `hide-reconciled-${account.id}`,
   );
+  const [hideReviewed, setHideReviewed] = useSyncedPref(
+    `hide-reviewed-${account.id}`,
+  );
 
   const onToggleRunningBalance = useCallback(() => {
     setShowRunningBalances(showRunningBalances === 'true' ? 'false' : 'true');
@@ -164,6 +167,15 @@ function AccountHeader({ account }: { readonly account: AccountEntity }) {
     );
   }, [hideReconciled, setHideReconciled, dispatch]);
 
+  const onToggleReviewed = useCallback(() => {
+    setHideReviewed(hideReviewed === 'true' ? 'false' : 'true');
+    dispatch(
+      collapseModals({
+        rootModalName: 'account-menu',
+      }),
+    );
+  }, [hideReviewed, setHideReviewed, dispatch]);
+
   const onClick = useCallback(() => {
     dispatch(
       pushModal({
@@ -177,6 +189,7 @@ function AccountHeader({ account }: { readonly account: AccountEntity }) {
             onReopenAccount,
             onToggleRunningBalance,
             onToggleReconciled,
+            onToggleReviewed,
           },
         },
       }),
@@ -190,6 +203,7 @@ function AccountHeader({ account }: { readonly account: AccountEntity }) {
     onSave,
     onToggleRunningBalance,
     onToggleReconciled,
+    onToggleReviewed,
   ]);
 
   return (

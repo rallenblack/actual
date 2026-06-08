@@ -59,6 +59,7 @@ function TransactionListWithPreviews({
 
   const [showRunningBalances] = useSyncedPref(`show-balances-${account.id}`);
   const [hideReconciled] = useSyncedPref(`hide-reconciled-${account.id}`);
+  const [hideReviewed] = useSyncedPref(`hide-reviewed-${account.id}`);
 
   const baseTransactionsQuery = useCallback(() => {
     let query = queries
@@ -68,8 +69,11 @@ function TransactionListWithPreviews({
     if (hideReconciled === 'true') {
       query = query.filter({ reconciled: { $eq: false } });
     }
+    if (hideReviewed === 'true') {
+      query = query.filter({ reviewed: { $eq: false } });
+    }
     return query;
-  }, [account.id, hideReconciled]);
+  }, [account.id, hideReconciled, hideReviewed]);
   const [transactionsQuery, setTransactionsQuery] = useState<Query>(
     baseTransactionsQuery(),
   );
