@@ -10,6 +10,7 @@ import {
   SvgRightArrow2,
   SvgSplit,
 } from '@actual-app/components/icons/v0';
+import { SvgViewShow } from '@actual-app/components/icons/v1';
 import {
   SvgArrowsSynchronize,
   SvgCalendar3,
@@ -126,6 +127,7 @@ export function TransactionListItem({
     category: categoryId,
     cleared: isCleared,
     reconciled: isReconciled,
+    reviewed: isReviewed,
     is_parent: isParent,
     is_child: isChild,
     notes,
@@ -233,6 +235,16 @@ export function TransactionListItem({
                       color: isCleared
                         ? theme.noticeTextLight
                         : theme.pageTextSubdued,
+                      marginRight: 5,
+                    }}
+                  />
+                )}
+                {isReviewed && (
+                  <SvgViewShow
+                    style={{
+                      width: 11,
+                      height: 11,
+                      color: theme.noticeTextLight,
                       marginRight: 5,
                     }}
                   />

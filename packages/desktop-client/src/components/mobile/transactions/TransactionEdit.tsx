@@ -1429,6 +1429,14 @@ const TransactionEditInner = memo<TransactionEditInnerProps>(
                 />
               </View>
             )}
+            <View style={{ alignItems: 'center', marginLeft: 12 }}>
+              <FieldLabel title={t('Reviewed')} />
+              <ToggleField
+                id="reviewed"
+                isOn={!!transaction.reviewed}
+                onToggle={on => onUpdateInner(transaction, 'reviewed', on)}
+              />
+            </View>
           </View>
 
           <View>
