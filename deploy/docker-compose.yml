@@ -1,0 +1,34 @@
+# Self-hosted Actual (this fork) for the dedicated Linux server.
+#
+#   docker compose pull        # get the latest image built by CI
+#   docker compose up -d       # start (and keep running across reboots)
+#   docker compose logs -f     # watch logs
+#
+# Data + the self-signed cert live in ./actual-data (a bind mount), so your
+# budget survives container/image updates. See README.md for full setup.
+
+services:
+  actual_server:
+    image: ghcr.io/rallenblack/actual-server:latest
+    container_name: actual-server
+    restart: unless-stopped
+    ports:
+      - '5006:5006'
+    environment:
+      # HTTPS is required (browsers need a secure context for SharedArrayBuffer).
+      # These point at the self-signed cert you generate into ./actual-data.
+      - ACTUAL_HTTPS_KEY=/data/selfhost.key
+      - ACTUAL_HTTPS_CERT=/data/selfhost.crt
+    volumes:
+      - ./actual-data:/data
+    healthcheck:
+      # Uses the self-signed cert as a trusted CA for the internal health check.
+      test:
+        [
+          'CMD-SHELL',
+          'NODE_EXTRA_CA_CERTS=/data/selfhost.crt node scripts/health-check.js',
+        ]
+      interval: 60s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
